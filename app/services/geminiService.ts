@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProjectInput, ProjectOutput, Category, OutputSubCategory, OutputCategory } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const SYSTEM_INSTRUCTION = `# Role
 你是一位資深 SROI (社會投資報酬率) 分析師與 ESG 顧問，專精於將質化活動轉化為量化影響力數據。
