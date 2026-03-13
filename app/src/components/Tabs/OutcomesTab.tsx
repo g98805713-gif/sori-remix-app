@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRightLeft, Sparkles, Loader2, ChevronRight } from 'lucide-react';
-import { Outcome } from '../../../types';
+import type { Outcome } from '../../../types';
 
 interface OutcomesTabProps {
   outcomes: Outcome[];

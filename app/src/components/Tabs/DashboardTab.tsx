@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, Loader2, LayoutDashboard, ChevronRight } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { SROIFinalResult, ImpactValue } from '../../../types';
+import type { SROIFinalResult, ImpactValue } from '../../../types';
 
 interface DashboardTabProps {
   sroiResult: SROIFinalResult | null;

@@ -69,17 +69,18 @@ import type {
 import ReactMarkdown from 'react-markdown';
 import { parseCSV } from './src/utils/csvParser';
 
-// API Helper
+// API Helper - 擷取並拋出完整錯誤訊息
 const callGeminiAPI = async (actionType: string, data: any = {}) => {
   const res = await fetch('/api/gemini', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ actionType, data }),
   });
+  const resultData = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error('API Request Failed');
+    const msg = resultData.error || `HTTP ${res.status}: ${res.statusText}`;
+    throw new Error(msg);
   }
-  const resultData = await res.json();
   if (resultData.error) throw new Error(resultData.error);
   return resultData.result;
 };
@@ -95,6 +96,7 @@ import ImpactTab from './src/components/Tabs/ImpactTab';
 import ValuesTab from './src/components/Tabs/ValuesTab';
 import DashboardTab from './src/components/Tabs/DashboardTab';
 import AIReportTab from './src/components/Tabs/AIReportTab';
+import DebugPanel from './src/components/Debug/DebugPanel';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
 
@@ -127,6 +129,8 @@ const App: React.FC = () => {
   const [analysis, setAnalysis] = useState<string>("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lastParseError, setLastParseError] = useState<string | null>(null);
+  const [selectedFileInfo, setSelectedFileInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -280,8 +284,9 @@ const App: React.FC = () => {
       await aiAnalysisPromise;
 
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error("Auto Analysis Error:", error);
-      setErrorMsg("自動生成過程中發生錯誤，請檢查網路狀態或重試。");
+      setErrorMsg(`Gemini 錯誤：${errMsg}`);
       setIsAnalyzingStakeholders(false);
       setIsAnalyzingOutcomes(false);
       setIsAnalyzingFinancialProxies(false);
@@ -359,20 +364,31 @@ const App: React.FC = () => {
     setUserOutputs(prev => [...prev, newItem]);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || file.type !== 'application/pdf') {
+    // 立即顯示選檔狀態（用於除錯：若此處有值表示 onChange 有觸發）
+    setSelectedFileInfo(file ? `${file.name} (${file.size} bytes, type: ${file.type || 'unknown'})` : null);
+
+    if (!file) return;
+
+    const isPdf = file.type === 'application/pdf' || file.type === 'application/x-pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
       setErrorMsg("請上傳 PDF 格式計畫書。");
+      setLastParseError(`檔案格式錯誤：收到 type=${file.type}, name=${file.name}`);
       return;
     }
 
     setErrorMsg(null);
+    setLastParseError(null);
     setIsParsing(true);
 
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
         const base64String = (reader.result as string).split(',')[1];
+        if (!base64String) {
+          throw new Error("無法讀取檔案內容");
+        }
 
         // 重置狀態
         setUserInputs([]);
@@ -412,17 +428,32 @@ const App: React.FC = () => {
           }));
           setUserOutputs(parsedOutputs);
 
-          setIsParsing(false);
+          setLastParseError(null);
           window.scrollTo({ top: 800, behavior: 'smooth' });
 
           runAllAnalysis(data.setup, parsedInputs, parsedOutputs);
+        } else {
+          setLastParseError("API 回傳空資料");
+          setErrorMsg("解析失敗：API 未回傳有效資料。請檢查 Debug 面板。");
         }
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      setErrorMsg("解析失敗，請確認檔案內容。");
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        setLastParseError(errMsg);
+        setErrorMsg(`解析失敗：${errMsg}`);
+        console.error("PDF 解析錯誤:", error);
+      } finally {
+        setIsParsing(false);
+      }
+    };
+    reader.onerror = () => {
+      setLastParseError("檔案讀取失敗");
+      setErrorMsg("無法讀取檔案，請重試。");
       setIsParsing(false);
-    }
+    };
+    reader.readAsDataURL(file);
+
+    // 清空 input 以允許重選同一檔案
+    e.target.value = '';
   };
 
   const stats = useMemo(() => {
@@ -447,8 +478,9 @@ const App: React.FC = () => {
       const result = await callGeminiAPI("analyzeSROI", { inputs: userInputs, outputs: userOutputs });
       setAnalysis(result);
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error("AI Analysis Trigger Error:", error);
-      setErrorMsg("生成顧問報告時發生錯誤，請檢查 API 金鑰或網路狀態。");
+      setErrorMsg(`Gemini 錯誤：${errMsg}`);
       setAnalysis("生成分析失敗。");
     } finally {
       setIsAnalyzing(false);
@@ -476,8 +508,9 @@ const App: React.FC = () => {
       }));
       setStakeholders(parsed);
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error("Stakeholder Analysis Error:", error);
-      setErrorMsg("分析利害關係人時發生錯誤。");
+      setErrorMsg(`Gemini 錯誤：${errMsg}`);
     } finally {
       setIsAnalyzingStakeholders(false);
     }
@@ -515,8 +548,9 @@ const App: React.FC = () => {
       }));
       setOutcomes(parsed);
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error(error);
-      setErrorMsg("推導成果時發生錯誤。");
+      setErrorMsg(`Gemini 錯誤：${errMsg}`);
     } finally {
       setIsAnalyzingOutcomes(false);
     }
@@ -542,8 +576,9 @@ const App: React.FC = () => {
       }));
       setFinancialProxies(parsed);
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error(error);
-      setErrorMsg("推導財務代理變數時發生錯誤。");
+      setErrorMsg(`Gemini 錯誤：${errMsg}`);
     } finally {
       setIsAnalyzingFinancialProxies(false);
     }
@@ -571,8 +606,9 @@ const App: React.FC = () => {
       }));
       setImpactFactors(parsed);
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error(error);
-      setErrorMsg("評估影響力因子時發生錯誤。");
+      setErrorMsg(`Gemini 錯誤：${errMsg}`);
     } finally {
       setIsAnalyzingImpactFactors(false);
     }
@@ -600,8 +636,9 @@ const App: React.FC = () => {
       }));
       setImpactValues(parsed);
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error(error);
-      setErrorMsg("計算影響價值時發生錯誤。");
+      setErrorMsg(`Gemini 錯誤：${errMsg}`);
     } finally {
       setIsAnalyzingImpactValues(false);
     }
@@ -650,8 +687,9 @@ const App: React.FC = () => {
         });
       }
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error(error);
-      setErrorMsg("計算 SROI 時發生錯誤。");
+      setErrorMsg(`Gemini 錯誤：${errMsg}`);
     } finally {
       setIsCalculatingSROI(false);
     }
@@ -667,13 +705,13 @@ const App: React.FC = () => {
 
       <main className="flex-grow max-w-[1600px] w-full mx-auto px-10 py-12 space-y-12">
         {errorMsg && (
-          <div className="bg-red-50 border-l-8 border-red-500 p-8 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-4">
-            <div className="flex items-center space-x-4">
-              <AlertCircle className="w-8 h-8 text-red-500" />
-              <p className="text-2xl font-black text-red-700">{errorMsg}</p>
+          <div className="sticky top-20 z-40 bg-red-50 border-4 border-red-500 p-8 rounded-2xl flex items-center justify-between shadow-2xl animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center space-x-4 flex-1 min-w-0">
+              <AlertCircle className="w-10 h-10 text-red-500 flex-shrink-0" />
+              <p className="text-2xl font-black text-red-700 break-words">{errorMsg}</p>
             </div>
-            <button onClick={() => setErrorMsg(null)} className="text-red-400 hover:text-red-600">
-              <X className="w-8 h-8" />
+            <button onClick={() => { setErrorMsg(null); setLastParseError(null); }} className="text-red-400 hover:text-red-600 flex-shrink-0 ml-4">
+              <X className="w-10 h-10" />
             </button>
           </div>
         )}
@@ -683,6 +721,9 @@ const App: React.FC = () => {
         {activeTab === 'setup' && (
           <SetupTab
             isParsing={isParsing}
+            selectedFileInfo={selectedFileInfo}
+            lastParseError={lastParseError}
+            errorMsg={errorMsg}
             setupData={setupData}
             userInputs={userInputs}
             userOutputs={userOutputs}
@@ -769,6 +810,79 @@ const App: React.FC = () => {
             isAnalyzing={isAnalyzing}
           />
         )}
+
+        {String(import.meta.env.VITE_DEBUG_PANEL ?? '').toLowerCase() === 'true' && (() => {
+          const activeStakeholders = stakeholders.filter(s => s.decision !== '排除');
+          const activeOutcomes = outcomes.filter(o => o.decision !== '排除');
+          const totalIn = userInputs.reduce((acc, curr) => acc + curr.totalValue, 0);
+          const rawFunds = setupData.funds || totalIn;
+          const totalCost = typeof rawFunds === 'string' ? (parseFloat(rawFunds.replace(/[^\d.]/g, '')) || 0) : rawFunds;
+          const totalImpact = impactValues.reduce((sum, v) => {
+            const numericValue = parseFloat(v.value.replace(/[^\d.]/g, '')) || 0;
+            return sum + numericValue;
+          }, 0);
+
+          const debugConfigs: Record<string, { title: string; sections: { label: string; data: unknown }[] }> = {
+            setup: {
+              title: 'Tab 0: 計畫解析',
+              sections: [
+                { label: '狀態 (選檔/解析/錯誤)', data: { selectedFileInfo, isParsing, lastParseError } },
+                { label: '輸出 (setupData, inputs, outputs)', data: { setupData, userInputs, userOutputs } },
+              ],
+            },
+            stakeholders: {
+              title: 'Tab 1: 利害關係人',
+              sections: [
+                { label: 'Input (傳給 API 的 projectData)', data: { projectData: setupData } },
+                { label: 'Output (Gemini 回傳解析後)', data: { stakeholders } },
+              ],
+            },
+            outcomes: {
+              title: 'Tab 2: 成果推導',
+              sections: [
+                { label: 'Input (傳給 API)', data: { projectData: setupData, inputs: userInputs, outputs: userOutputs } },
+                { label: 'Output (Gemini 回傳解析後)', data: { outcomes } },
+              ],
+            },
+            financials: {
+              title: 'Tab 3: 財務定價',
+              sections: [
+                { label: 'Input (傳給 API，已過濾排除項)', data: { stakeholders: activeStakeholders, outcomes: activeOutcomes } },
+                { label: 'Output (Gemini 回傳解析後)', data: { financialProxies } },
+              ],
+            },
+            impact: {
+              title: 'Tab 4: 影響力因子',
+              sections: [
+                { label: 'Input (傳給 API，已過濾排除項)', data: { stakeholders: activeStakeholders, outcomes: activeOutcomes } },
+                { label: 'Output (Gemini 回傳解析後)', data: { impactFactors } },
+              ],
+            },
+            values: {
+              title: 'Tab 5: 影響價值',
+              sections: [
+                { label: 'Input (傳給 API)', data: { financials: financialProxies, impactFactors } },
+                { label: 'Output (Gemini 回傳解析後)', data: { impactValues } },
+              ],
+            },
+            dashboard: {
+              title: 'Tab 6: 影響力看板',
+              sections: [
+                { label: 'Input (傳給 API)', data: { totalCost, totalImpactValue: totalImpact } },
+                { label: 'Output (Gemini 回傳 + 前端計算)', data: { sroiResult } },
+              ],
+            },
+            ai: {
+              title: 'Tab 7: 顧問報告',
+              sections: [
+                { label: 'Input (傳給 API)', data: { inputs: userInputs, outputs: userOutputs } },
+                { label: 'Output (Gemini 回傳 Markdown)', data: { analysis } },
+              ],
+            },
+          };
+          const config = debugConfigs[activeTab];
+          return config ? <DebugPanel title={config.title} sections={config.sections} /> : null;
+        })()}
       </main>
 
       <footer className="py-20 text-center text-gray-400 font-black text-xl bg-white border-t mt-auto">

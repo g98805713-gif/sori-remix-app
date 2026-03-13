@@ -11,7 +11,9 @@
 
 - 顯示 `setupData`、`userInputs`、`userOutputs`、`stakeholders`、`outcomes` 等
 - 用 `JSON.stringify(data, null, 2)` 格式化輸出
-- 用 `import.meta.env.DEV` 只在開發時顯示
+- 用環境變數 `VITE_DEBUG_PANEL=true` 控制顯示（見下方說明）
+
+**啟用方式**：在 `.env.local` 加入 `VITE_DEBUG_PANEL=true` 即顯示 Debug 面板；移除或設為 `false` 則為正常模式。
 
 這樣可以：
 - 切換分頁時立刻看到對應資料

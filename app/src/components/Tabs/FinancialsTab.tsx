@@ -1,6 +1,6 @@
 import React from 'react';
 import { DollarSign, Sparkles, Loader2, ChevronRight } from 'lucide-react';
-import { FinancialProxy } from '../../../types';
+import type { FinancialProxy } from '../../../types';
 
 interface FinancialsTabProps {
   financialProxies: FinancialProxy[];

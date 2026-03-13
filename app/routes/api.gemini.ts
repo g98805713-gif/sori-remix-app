@@ -41,6 +41,15 @@ export async function action({ request }: ActionFunctionArgs) {
         }
     } catch (error: any) {
         console.error("API Route Error:", error);
-        return Response.json({ error: error.message }, { status: 500 });
+        let msg = error?.message || "Unknown error";
+        const status = error?.status ?? 500;
+        if (status === 429 || msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
+            msg = "Gemini API 配額已用完，請稍後再試或檢查您的帳單設定。詳見：https://ai.google.dev/gemini-api/docs/rate-limits";
+        } else if (msg.includes("Invalid API key") || msg.includes("API key")) {
+            msg = "Gemini API 金鑰無效或已過期，請檢查 .env.local 中的 GEMINI_API_KEY。";
+        } else if (msg.length > 200) {
+            msg = msg.slice(0, 200) + "...";
+        }
+        return Response.json({ error: msg }, { status: status >= 400 ? status : 500 });
     }
 }

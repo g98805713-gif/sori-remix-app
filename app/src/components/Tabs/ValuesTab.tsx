@@ -1,6 +1,6 @@
 import React from 'react';
 import { Banknote, Sparkles, Loader2, ChevronRight } from 'lucide-react';
-import { ImpactValue } from '../../../types';
+import type { ImpactValue } from '../../../types';
 
 interface ValuesTabProps {
   impactValues: ImpactValue[];

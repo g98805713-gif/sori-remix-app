@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ProjectInput, ProjectOutput, Category, OutputSubCategory, OutputCategory } from "../types";
+import type { ProjectInput, ProjectOutput } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -66,7 +66,7 @@ export const analyzeSROI = async (inputs: ProjectInput[], outputs: ProjectOutput
     return response.text || "無法生成分析。";
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
-    return "分析過程中發生錯誤。";
+    throw error;
   }
 };
 
@@ -164,7 +164,7 @@ export const analyzeStakeholders = async (projectData: any) => {
     return response.text || "";
   } catch (error) {
     console.error("Gemini Stakeholder Analysis Error:", error);
-    return "";
+    throw error;
   }
 };
 
@@ -197,7 +197,7 @@ export const analyzeOutcomes = async (projectData: any, inputs: ProjectInput[], 
     return response.text || "";
   } catch (error) {
     console.error("Gemini Outcome Analysis Error:", error);
-    return "";
+    throw error;
   }
 };
 
@@ -226,7 +226,7 @@ export const analyzeFinancialProxies = async (stakeholders: any[], outcomes: any
     return response.text || "";
   } catch (error) {
     console.error("Gemini Financial Proxy Analysis Error:", error);
-    return "";
+    throw error;
   }
 };
 
@@ -256,7 +256,7 @@ export const analyzeImpactFactors = async (stakeholders: any[], outcomes: any[])
     return response.text || "";
   } catch (error) {
     console.error("Gemini Impact Factor Analysis Error:", error);
-    return "";
+    throw error;
   }
 };
 
@@ -290,7 +290,7 @@ export const analyzeImpactValue = async (financials: any[], impactFactors: any[]
     return response.text || "";
   } catch (error) {
     console.error("Gemini Impact Value Analysis Error:", error);
-    return "";
+    throw error;
   }
 };
 
@@ -325,6 +325,6 @@ export const calculateFinalSROI = async (totalCost: string, totalImpactValue: st
     return response.text || "";
   } catch (error) {
     console.error("Gemini SROI Calculation Error:", error);
-    return "";
+    throw error;
   }
 };

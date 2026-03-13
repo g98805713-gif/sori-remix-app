@@ -6,6 +6,7 @@
 
 > ℹ️ **專案指南與教學**（詳見 [`docs/`](./docs/) 資料夾）
 > - **系統架構與開發**：想了解資料流程、前端分頁設計與 Gemini API 串接，請參閱 [**專案架構指南**](./docs/ARCHITECTURE.md)
+> - **Gemini API 使用說明**：各 Tab 對應的 API 端點、觸發方式與錯誤處理，請參閱 [**GEMINI_API_USAGE.md**](./docs/GEMINI_API_USAGE.md)
 > - **App.tsx 功能說明**：核心元件狀態管理與 SROI 分析流程，請參閱 [**APP_FUNCTIONALITY.md**](./docs/APP_FUNCTIONALITY.md)
 > - **除錯建議**：步驟式流程的資料驗證與 Debug 方法，請參閱 [**DEBUG_建議.md**](./docs/DEBUG_建議.md)
 > - **Tab 除錯檢查清單**：各 Tab 對應頁面、功能、Gemini Prompt 位置，請參閱 [**TAB_DEBUG_CHECKLIST.md**](./docs/TAB_DEBUG_CHECKLIST.md)
@@ -71,6 +72,15 @@ npm run dev
 ```
 
 您的應用程式將會在 `http://localhost:5173` 運行。
+
+### 環境變數 (Environment Variables)
+
+在專案根目錄建立 `.env.local`，可設定：
+
+| 變數 | 說明 |
+|------|------|
+| `GEMINI_API_KEY` | Google Gemini API 金鑰（必填，用於 AI 分析） |
+| `VITE_DEBUG_PANEL` | 設為 `true` 時顯示 Debug 面板，取消或設為其他值則為正常模式 |
 
 ## 🏗️ 建立正式環境版本 (Building for Production)
 

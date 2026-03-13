@@ -1,9 +1,13 @@
 import React from 'react';
 import { Upload, Loader2, Sparkles, Building2, Rocket, Zap, Banknote, CheckCircle2, Users, ArrowRightLeft, DollarSign, Target, TrendingUp, ChevronRight, Plus, Trash2 } from 'lucide-react';
-import { ProjectSetupData, ProjectInput, ProjectOutput, Category, OutputSubCategory, OutputCategory } from '../../../types';
+import { Category, OutputSubCategory, OutputCategory } from '../../../types';
+import type { ProjectSetupData, ProjectInput, ProjectOutput } from '../../../types';
 
 interface SetupTabProps {
   isParsing: boolean;
+  selectedFileInfo: string | null;
+  lastParseError: string | null;
+  errorMsg: string | null;
   setupData: ProjectSetupData;
   userInputs: ProjectInput[];
   userOutputs: ProjectOutput[];
@@ -27,6 +31,9 @@ interface SetupTabProps {
 
 const SetupTab: React.FC<SetupTabProps> = ({
   isParsing,
+  selectedFileInfo,
+  lastParseError,
+  errorMsg,
   setupData,
   userInputs,
   userOutputs,
@@ -49,7 +56,7 @@ const SetupTab: React.FC<SetupTabProps> = ({
 }) => {
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      {/* 上傳區塊 */}
+      {/* 上傳區塊 - 使用按鈕觸發檔案選擇 */}
       <div className="relative flex flex-col items-center justify-center p-20 bg-white border-4 border-dashed border-gray-200 rounded-[4rem] shadow-sm hover:border-indigo-400 transition-all group overflow-hidden">
         {isParsing && (
           <div className="absolute inset-0 bg-white/95 z-20 flex flex-col items-center justify-center backdrop-blur-md animate-in fade-in text-center px-10">
@@ -62,12 +69,33 @@ const SetupTab: React.FC<SetupTabProps> = ({
         </div>
         <h2 className="text-5xl font-black text-gray-900 mb-6 tracking-tighter text-center">PDF 計畫書智慧導入 (SROI 專用)</h2>
         <p className="text-2xl text-gray-700 font-bold mb-12 text-center">AI 將自動識別活動內容並推論每個產出項目的「財務定價數字」</p>
-        
-        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="application/pdf" />
-        <button onClick={() => fileInputRef.current?.click()} className="bg-gray-900 text-white px-20 py-8 rounded-[3rem] font-black text-3xl hover:bg-indigo-600 shadow-2xl transition-all flex items-center space-x-6">
+        {selectedFileInfo && (
+          <p className="text-xl font-bold text-emerald-600 mb-6 px-6 py-3 bg-emerald-50 rounded-2xl">
+            已選擇：{selectedFileInfo}
+          </p>
+        )}
+        {(lastParseError || errorMsg) && (
+          <div className="mb-6 w-full max-w-2xl p-6 bg-red-100 border-4 border-red-500 rounded-2xl">
+            <p className="text-xl font-black text-red-800 mb-2">錯誤訊息：</p>
+            <p className="text-lg font-bold text-red-700 break-words">{lastParseError || errorMsg}</p>
+          </div>
+        )}
+        <input
+          id="pdf-upload"
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="sr-only"
+          accept="application/pdf,.pdf"
+          disabled={isParsing}
+        />
+        <label
+          htmlFor={isParsing ? undefined : 'pdf-upload'}
+          className={`inline-flex items-center gap-6 bg-gray-900 text-white px-20 py-8 rounded-[3rem] font-black text-3xl hover:bg-indigo-600 shadow-2xl transition-all ${isParsing ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
+        >
           <Sparkles className="w-12 h-12 text-indigo-400" />
           <span>立即解析 PDF 並提取定價數據</span>
-        </button>
+        </label>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">

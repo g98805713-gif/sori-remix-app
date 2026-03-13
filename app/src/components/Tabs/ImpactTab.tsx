@@ -1,6 +1,6 @@
 import React from 'react';
 import { Target, Sparkles, Loader2, ChevronRight } from 'lucide-react';
-import { ImpactFactor } from '../../../types';
+import type { ImpactFactor } from '../../../types';
 
 interface ImpactTabProps {
   impactFactors: ImpactFactor[];

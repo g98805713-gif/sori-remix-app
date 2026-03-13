@@ -1,6 +1,6 @@
 import React from 'react';
 import { Users, Sparkles, Loader2, ChevronRight } from 'lucide-react';
-import { Stakeholder } from '../../../types';
+import type { Stakeholder } from '../../../types';
 
 interface StakeholdersTabProps {
   stakeholders: Stakeholder[];
