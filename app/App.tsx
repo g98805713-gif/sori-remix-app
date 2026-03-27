@@ -108,10 +108,17 @@ const EMPTY_PROJECT_SETUP: ProjectSetupData = {
   expectedGoals: '',
   participants: '',
   staff: '',
-  funds: '',
+  funds: 0,
   humanResources: '',
   activities: []
 };
+
+/** 將 PDF／表單的 funds 正規化為數字（相容舊字串） */
+function parseFundsToNumber(v: unknown): number {
+  if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  if (typeof v === 'string') return parseFloat(v.replace(/[^\d.]/g, '')) || 0;
+  return 0;
+}
 
 /** Gemini 若未回傳 setup 或結構不完整，避免將 setupData 設為 undefined */
 function normalizeSetupFromApi(raw: unknown): ProjectSetupData {
@@ -129,7 +136,7 @@ function normalizeSetupFromApi(raw: unknown): ProjectSetupData {
     expectedGoals: String(o.expectedGoals ?? ''),
     participants: String(o.participants ?? ''),
     staff: String(o.staff ?? ''),
-    funds: String(o.funds ?? ''),
+    funds: parseFundsToNumber(o.funds),
     humanResources: String(o.humanResources ?? ''),
     activities: Array.isArray(o.activities) ? (o.activities as ActivityDetail[]) : []
   };
@@ -301,7 +308,7 @@ const App: React.FC = () => {
       setIsCalculatingSROI(true);
       const totalIn = parsedInputs.reduce((acc, curr) => acc + curr.totalValue, 0);
       const rawFunds = parsedSetupData.funds || totalIn;
-      const funds = typeof rawFunds === 'string' ? (parseFloat(rawFunds.replace(/[^\d.]/g, '')) || 0) : rawFunds;
+      const funds = typeof rawFunds === 'number' ? rawFunds : parseFundsToNumber(rawFunds);
 
       const totalImpact = parsedImpactValues.reduce((sum, v) => {
         const numericValue = parseFloat(v.value.replace(/[^\d.]/g, '')) || 0;
@@ -348,8 +355,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSetupDataChange = (key: keyof ProjectSetupData, value: any) => {
-    setSetupData(prev => ({ ...prev, [key]: value }));
+  const handleSetupDataChange = (key: keyof ProjectSetupData, value: unknown) => {
+    if (key === 'funds') {
+      setSetupData(prev => ({ ...prev, funds: parseFundsToNumber(value) }));
+      return;
+    }
+    setSetupData(prev => ({ ...prev, [key]: value as never }));
   };
 
   const handleUpdateInput = (id: string, updates: Partial<ProjectInput>) => {
@@ -716,7 +727,7 @@ const App: React.FC = () => {
     try {
       const totalIn = userInputs.reduce((acc, curr) => acc + curr.totalValue, 0);
       const rawFunds = setupData.funds || totalIn;
-      const funds = typeof rawFunds === 'string' ? (parseFloat(rawFunds.replace(/[^\d.]/g, '')) || 0) : rawFunds;
+      const funds = typeof rawFunds === 'number' ? rawFunds : parseFundsToNumber(rawFunds);
 
       const totalImpact = impactValues.reduce((sum, v) => {
         const numericValue = parseFloat(v.value.replace(/[^\d.]/g, '')) || 0;
@@ -885,7 +896,7 @@ const App: React.FC = () => {
           const activeOutcomes = outcomes.filter(o => o.decision !== '排除');
           const totalIn = userInputs.reduce((acc, curr) => acc + curr.totalValue, 0);
           const rawFunds = setupData.funds || totalIn;
-          const totalCost = typeof rawFunds === 'string' ? (parseFloat(rawFunds.replace(/[^\d.]/g, '')) || 0) : rawFunds;
+          const totalCost = typeof rawFunds === 'number' ? rawFunds : parseFundsToNumber(rawFunds);
           const totalImpact = impactValues.reduce((sum, v) => {
             const numericValue = parseFloat(v.value.replace(/[^\d.]/g, '')) || 0;
             return sum + numericValue;

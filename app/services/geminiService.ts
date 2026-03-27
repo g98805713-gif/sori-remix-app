@@ -88,6 +88,12 @@ export const parsePDFProposal = async (base64Data: string, mimeType: string) => 
        - **quantity 請填 1**（或僅作備註之人數說明；後端計算時**不會**用 quantity × hours 連乘）。
        - **不要**同時把「各活動志工人數加總」當成 quantity、又把「總工時」當成 hours，否則會與系統公式衝突。
     5. **場地／物力**：場地可用 quantity（例如場次）與 days（天數）；物力以 quantity 為主。
+    6. **setup.funds**：必須為**數字型別**（JSON number），單位為新台幣，僅填 PDF 明載之總投入或經費數字，勿加引號。
+    7. **活動 expectedItems 的 value**：僅摘錄 **PDF 原文或表格中明載**之人數、時數、說明；**勿**在 value 內自行補充 PDF 未出現的推論、註解或合計說明（例如「4月/9月合計」若 PDF 未寫則不要寫）。
+    8. **產出項 outputs 分類**：
+       - 「事(活動/服務)」「物(實體產品)」僅列**本計畫新產生之服務人次、實體產出或可量化成果**。
+       - 若 PDF 僅提及「沿用既有教材、徵件得來之教材作為工具」而**非本計畫新產出之標的**，請**不要**列為直接產出；可省略或於 description 註明「教材為投入／工具，非新產出」。
+       - 社會效益、意識提升等若為 proxy 推估，於 description 註明「proxy」或「推估」。
 
     請回傳純 JSON 格式：
     {
@@ -100,14 +106,14 @@ export const parsePDFProposal = async (base64Data: string, mimeType: string) => 
         "expectedGoals": "預期目標",
         "participants": "主要參加者",
         "staff": "執行人員",
-        "funds": "總投入金額(純數字)",
+        "funds": 3782722,
         "humanResources": "人力投入說明",
         "activities": [
           {
             "title": "活動名稱",
             "content": "活動內容簡述",
             "expectedItems": [
-              { "label": "項目名稱", "value": "數值及單位", "price": 數字 }
+              { "label": "項目名稱", "value": "數值及單位（僅 PDF 明載）", "price": 數字 }
             ]
           }
         ]

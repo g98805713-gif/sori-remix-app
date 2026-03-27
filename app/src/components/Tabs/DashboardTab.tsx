@@ -114,7 +114,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
                 </Pie>
                 <Tooltip 
                   contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
-                  formatter={(value: number) => `NT$ ${value.toLocaleString()}`}
+                  formatter={(value) => `NT$ ${(value ?? 0).toLocaleString()}`}
                 />
               </PieChart>
             </ResponsiveContainer>

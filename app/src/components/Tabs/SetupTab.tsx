@@ -140,6 +140,18 @@ const SetupTab: React.FC<SetupTabProps> = ({
                 className="w-full bg-gray-50 rounded-2xl px-8 py-5 text-2xl font-bold min-h-[140px] outline-none focus:ring-4 focus:ring-indigo-100 transition-all" 
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-black text-gray-400 uppercase tracking-widest">總投入金額 (NT$)</label>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={Number.isFinite(setupData.funds) ? setupData.funds : 0}
+                onChange={(e) => onUpdateSetup('funds', e.target.value === '' ? 0 : Number(e.target.value))}
+                className="w-full max-w-md bg-gray-50 rounded-2xl px-8 py-5 text-2xl font-black outline-none focus:ring-4 focus:ring-indigo-100 transition-all"
+              />
+              <p className="text-sm text-gray-500 font-bold">PDF 解析後可在此微調；用於 SROI 分母（總投入）。</p>
+            </div>
           </div>
         </section>
       </div>

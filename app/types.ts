@@ -38,7 +38,8 @@ export interface ProjectSetupData {
   expectedGoals: string;
   participants: string;
   staff: string;
-  funds: string;
+  /** 總投入金額（新台幣，純數字） */
+  funds: number;
   humanResources: string;
   activities: ActivityDetail[];
 }

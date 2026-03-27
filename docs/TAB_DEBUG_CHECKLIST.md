@@ -323,7 +323,7 @@
 
 | 輸入 | 說明 |
 |------|------|
-| `totalCost` | `setupData.funds` 或 `userInputs` 總和（字串） |
+| `totalCost` | `setupData.funds`（number）或 `userInputs` 總和 |
 | `totalImpactValue` | `impactValues` 的 value 加總（字串） |
 
 | 輸出格式 | CSV 標題列 |
@@ -340,7 +340,7 @@
 ### 檢查重點
 
 - [ ] 前置：`impactValues.length > 0`
-- [ ] `funds` 解析：字串時需 `parseFloat(rawFunds.replace(/[^\d.]/g, ''))`
+- [ ] `funds`：`ProjectSetupData.funds` 為 **number**；PDF 舊字串經 `parseFundsToNumber` 正規化
 - [ ] 折現率 1.2%：`impactPresentValue = totalImpact / (1 + 0.012)`
 - [ ] SROI 公式：`ratio = impactPresentValue / funds`
 
